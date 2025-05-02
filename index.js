@@ -25,13 +25,26 @@ var fs = require('fs');
 // Audio init
 var audioEnabled = true;
 var PulseAudio = require('pulseaudio2');
-var pulse = new PulseAudio();
-pulse.on('error', function(error) {
-  console.log(error);
-  audioEnabled = false;
-  console.log('Kclient was unable to init audio, it is possible your host lacks support!!!!');
-});
+var pulse = null;
 
+function initPulseAudio() {
+  console.log('Attempting to initialize PulseAudio...');
+  pulse = new PulseAudio();
+  pulse.on('error', function(error) {
+    console.log(error);
+    audioEnabled = false;
+    console.log('PulseAudio connection failed, retrying in 1 second...');
+    setTimeout(initPulseAudio, 1000);
+  });
+  
+  pulse.on('connection', function() {
+    console.log('PulseAudio connection successful!');
+    audioEnabled = true;
+  });
+}
+
+// Start initial connection attempt
+initPulseAudio();
 
 //// Server Paths Main ////
 app.engine('html', require('ejs').renderFile);
